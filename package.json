@@ -8,6 +8,24 @@
     "url": "https://github.com/AlexandreSi/connect4ai"
   },
   "dependencies": {
-    "flow": "^0.2.3"
+    "eslint": "^4.17.0"
+  },
+  "devDependencies": {
+    "babel-eslint": "^8.2.1",
+    "babel-preset-flow": "^6.23.0",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-flowtype": "^2.43.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-react": "^7.6.1",
+    "flow": "^0.2.3",
+    "flow-bin": "^0.65.0",
+    "prettier": "^1.10.2"
+  },
+  "scrips": {
+    "flow start": "flow start",
+    "flow stop": "flow stop",
+    "flow status": "flow status",
+    "flow coverage": "flow coverage"
   }
 }
