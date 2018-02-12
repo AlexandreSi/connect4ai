@@ -41,6 +41,10 @@ class Game {
     }, []);
   }
 
+  getLine(lineIndex: number): Array<number> {
+    return this.board[lineIndex];
+  }
+
   getFirstLineEmpty(column: Array<number>): ?number {
     if (column[0] !== 0) return null;
     let lineIndexToReplace;
@@ -59,6 +63,34 @@ class Game {
     const column = this.getColumn(columnIndex);
     const lineIndexToReplace = this.getFirstLineEmpty(column);
     if (!!lineIndexToReplace) this.board[lineIndexToReplace][columnIndex] = playerId;
+  }
+
+  checkForWinInArray(array: Array<number>): number {
+    if (array.length < 4) return 0;
+    const subArrayNumber = array.length - 4 + 1;
+    for (let offset = 0; offset < subArrayNumber; offset++) {
+      let subArray = array.slice(offset, offset + 4);
+      if (subArray.indexOf(0) < 0) {
+        if (this.isConnectArray(subArray)) return subArray[0];
+      }
+    }
+    return 0;
+  }
+
+  isConnectArray(array: Array<number>): boolean {
+    return (array[0] === array[1] && array[1] === array[2] && array[2] === array[3]);
+  }
+
+  checkForWin(): number {
+    for (let lineIndex = 0; lineIndex < this.height; lineIndex++) {
+      let winIndicator = this.checkForWinInArray(this.getLine(lineIndex));
+      if (winIndicator !== 0) return winIndicator;
+    }
+    for (let columnIndex = 0; columnIndex < this.width; columnIndex++) {
+      let winIndicator = this.checkForWinInArray(this.getColumn(columnIndex));
+      if (winIndicator !== 0) return winIndicator;
+    }
+    return 0;
   }
 }
 
