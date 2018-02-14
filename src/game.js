@@ -20,17 +20,18 @@ class Game {
     mapPlayerToCharacter[1] = 'X';
     mapPlayerToCharacter[2] = 'O';
 
+    // eslint-disable-next-line
     console.log(
       this.board.reduce((boardString, line, index) => {
-        const lineString = line.reduce((lineString, cell) => {
-          lineString += ` ${mapPlayerToCharacter[cell]} `;
-          return lineString;
+        const completeLineString = line.reduce((lineString, cell) => {
+          const lineStringAppended = lineString.concat(` ${mapPlayerToCharacter[cell]} `);
+          return lineStringAppended;
         }, '');
-        boardString += lineString;
-        if (index !== boardString.length - 1) boardString += '\n';
-        return boardString;
+        let boardStringAppended = boardString.concat(completeLineString);
+        if (index !== boardStringAppended.length - 1) boardStringAppended += '\n';
+        return boardStringAppended;
       }, '')
-    );
+    )
   }
 
   getColumn(columnIndex: number): Array<number> {
@@ -67,18 +68,19 @@ class Game {
     this.display();
     const winner = this.checkForWin();
     if (!!winner) {
+      // eslint-disable-next-line
       console.log(`Player ${winner} won !`);
       process.exit();
     }
   }
 
-  checkForWinInArray(array: Array<number>): number {
+  static checkForWinInArray(array: Array<number>): number {
     if (array.length < 4) return 0;
     const subArrayNumber = array.length - 4 + 1;
     for (let offset = 0; offset < subArrayNumber; offset++) {
-      let subArray = array.slice(offset, offset + 4);
+      const subArray = array.slice(offset, offset + 4);
       if (subArray.indexOf(0) < 0) {
-        if (this.isConnectArray(subArray)) return subArray[0];
+        if (Game.isConnectArray(subArray)) return subArray[0];
       }
     }
     return 0;
@@ -92,7 +94,7 @@ class Game {
     if (maxCroppedSquareSideLength < 4) return null;
     const diagonal = [];
     for (let cellIndex = 0; cellIndex < maxCroppedSquareSideLength; cellIndex++) {
-      diagonal.push(this.board[lineIndex + cellIndex][columnIndex + cellIndex])
+      diagonal.push(this.board[lineIndex + cellIndex][columnIndex + cellIndex]);
     }
     return diagonal;
   }
@@ -105,7 +107,7 @@ class Game {
     if (maxCroppedSquareSideLength < 4) return null;
     const diagonal = [];
     for (let cellIndex = 0; cellIndex < maxCroppedSquareSideLength; cellIndex++) {
-      diagonal.push(this.board[lineIndex + cellIndex][columnIndex - cellIndex])
+      diagonal.push(this.board[lineIndex + cellIndex][columnIndex - cellIndex]);
     }
     return diagonal;
   }
@@ -145,7 +147,7 @@ class Game {
     return diagonals;
   }
 
-  isConnectArray(array: Array<number>): boolean {
+  static isConnectArray(array: Array<number>): boolean {
     return (array[0] === array[1] && array[1] === array[2] && array[2] === array[3]);
   }
 
@@ -175,7 +177,7 @@ class Game {
   checkForWin(): number {
     const arrays = this.getAllArrays();
     for (let arrayIndex = 0; arrayIndex < arrays.length; arrayIndex++) {
-      let winIndicator = this.checkForWinInArray(arrays[arrayIndex]);
+      const winIndicator = Game.checkForWinInArray(arrays[arrayIndex]);
       if (winIndicator !== 0) return winIndicator;
     }
     return 0;

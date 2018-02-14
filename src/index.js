@@ -1,7 +1,7 @@
 // @flow
-var connect4 = require('./Game');
+const connect4 = require('./Game');
 
-var game = new connect4.Game();
+const game = new connect4.Game();
 game.playChip(2, 0);
 game.playChip(1, 0);
 game.playChip(2, 0);
@@ -15,4 +15,3 @@ game.playChip(1, 1);
 game.playChip(2, 5);
 game.playChip(1, 2);
 game.playChip(2, 2);
-console.log(game.checkForWin());

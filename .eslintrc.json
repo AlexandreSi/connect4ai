@@ -1,0 +1,14 @@
+{
+    "extends": ["airbnb-base", "plugin:flowtype/recommended"],
+    "plugins": ["flowtype"],
+    "rules": {
+        "comma-dangle": 0,
+        "flowtype/define-flow-type": 1,
+        "flowtype/use-flow-type": 1,
+        "function-paren-newline": 0,
+        "no-extra-boolean-cast": 0,
+        "no-mixed-operators": 0,
+        "no-plusplus": 0,
+        "semi": 0
+    }
+}
