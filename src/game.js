@@ -42,10 +42,11 @@ class Game {
   }
 
   getLine(lineIndex: number): Array<number> {
+    if (lineIndex >= this.width || lineIndex < 0) throw Error('Line out of boundary');
     return this.board[lineIndex];
   }
 
-  getFirstLineEmpty(column: Array<number>): ?number {
+  getLowestEmptyLine(column: Array<number>): ?number {
     if (column[0] !== 0) return null;
     let lineIndexToReplace;
     for (let lineIndex = 0; lineIndex < this.height; lineIndex++) {
@@ -61,8 +62,14 @@ class Game {
 
   playChip(playerId: number, columnIndex: number): void {
     const column = this.getColumn(columnIndex);
-    const lineIndexToReplace = this.getFirstLineEmpty(column);
+    const lineIndexToReplace = this.getLowestEmptyLine(column);
     if (!!lineIndexToReplace) this.board[lineIndexToReplace][columnIndex] = playerId;
+    this.display();
+    const winner = this.checkForWin();
+    if (!!winner) {
+      console.log(`Player ${winner} won !`);
+      process.exit();
+    }
   }
 
   checkForWinInArray(array: Array<number>): number {
@@ -77,17 +84,98 @@ class Game {
     return 0;
   }
 
+  getDiagonalByHighestCellDescendingRight(lineIndex: number, columnIndex: number): ?Array<number> {
+    const maxCroppedSquareSideLength = Math.min(
+      this.height - lineIndex,
+      this.width - columnIndex
+    );
+    if (maxCroppedSquareSideLength < 4) return null;
+    const diagonal = [];
+    for (let cellIndex = 0; cellIndex < maxCroppedSquareSideLength; cellIndex++) {
+      diagonal.push(this.board[lineIndex + cellIndex][columnIndex + cellIndex])
+    }
+    return diagonal;
+  }
+
+  getDiagonalByHighestCellDescendingLeft(lineIndex: number, columnIndex: number): ?Array<number> {
+    const maxCroppedSquareSideLength = Math.min(
+      this.height - lineIndex,
+      columnIndex + 1
+    );
+    if (maxCroppedSquareSideLength < 4) return null;
+    const diagonal = [];
+    for (let cellIndex = 0; cellIndex < maxCroppedSquareSideLength; cellIndex++) {
+      diagonal.push(this.board[lineIndex + cellIndex][columnIndex - cellIndex])
+    }
+    return diagonal;
+  }
+
+  getAllDiagonalsDescendingRight(): Array<Array<number>> {
+    const diagonals = [];
+    let diagonal;
+    for (let columnIndex = 0; columnIndex <= this.width - 4; columnIndex++) {
+      diagonal = this.getDiagonalByHighestCellDescendingRight(0, columnIndex);
+      if (!!diagonal) diagonals.push(diagonal);
+    }
+    for (let lineIndex = 1; lineIndex <= this.height - 4; lineIndex++) {
+      diagonal = this.getDiagonalByHighestCellDescendingRight(lineIndex, 0);
+      if (!!diagonal) diagonals.push(diagonal);
+    }
+    return diagonals;
+  }
+
+  getAllDiagonalsDescendingLeft(): Array<Array<number>> {
+    const diagonals = [];
+    let diagonal;
+    for (let columnIndex = 0; columnIndex <= this.width - 4; columnIndex++) {
+      diagonal = this.getDiagonalByHighestCellDescendingLeft(0, this.width - columnIndex - 1);
+      if (!!diagonal) diagonals.push(diagonal);
+    }
+    for (let lineIndex = 1; lineIndex <= this.height - 4; lineIndex++) {
+      diagonal = this.getDiagonalByHighestCellDescendingLeft(lineIndex, this.width - 1);
+      if (!!diagonal) diagonals.push(diagonal);
+    }
+    return diagonals;
+  }
+
+  getAllDiagonals(): Array<Array<number>> {
+    let diagonals = [];
+    diagonals = diagonals.concat(this.getAllDiagonalsDescendingLeft());
+    diagonals = diagonals.concat(this.getAllDiagonalsDescendingRight());
+    return diagonals;
+  }
+
   isConnectArray(array: Array<number>): boolean {
     return (array[0] === array[1] && array[1] === array[2] && array[2] === array[3]);
   }
 
-  checkForWin(): number {
+  getAllLines(): Array<Array<number>> {
+    const lines = [];
     for (let lineIndex = 0; lineIndex < this.height; lineIndex++) {
-      let winIndicator = this.checkForWinInArray(this.getLine(lineIndex));
-      if (winIndicator !== 0) return winIndicator;
+      lines.push(this.getLine(lineIndex));
     }
-    for (let columnIndex = 0; columnIndex < this.width; columnIndex++) {
-      let winIndicator = this.checkForWinInArray(this.getColumn(columnIndex));
+    return lines;
+  }
+
+  getAllColumns(): Array<Array<number>> {
+    const columns = [];
+    for (let columnsIndex = 0; columnsIndex < this.height; columnsIndex++) {
+      columns.push(this.getColumn(columnsIndex));
+    }
+    return columns;
+  }
+
+  getAllArrays(): Array<Array<number>> {
+    let arrays = this.getAllLines();
+    arrays = arrays.concat(this.getAllColumns());
+    arrays = arrays.concat(this.getAllDiagonals());
+    return arrays;
+  }
+
+  checkForWin(): number {
+    const arrays = this.getAllArrays();
+    for (let arrayIndex = 0; arrayIndex < arrays.length; arrayIndex++) {
+      let winIndicator = this.checkForWinInArray(arrays[arrayIndex]);
       if (winIndicator !== 0) return winIndicator;
     }
     return 0;
