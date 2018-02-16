@@ -161,7 +161,7 @@ class Game {
 
   getAllColumns(): Array<Array<number>> {
     const columns = [];
-    for (let columnsIndex = 0; columnsIndex < this.height; columnsIndex++) {
+    for (let columnsIndex = 0; columnsIndex < this.width; columnsIndex++) {
       columns.push(this.getColumn(columnsIndex));
     }
     return columns;
