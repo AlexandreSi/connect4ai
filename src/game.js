@@ -61,17 +61,17 @@ class Game {
     return lineIndexToReplace;
   }
 
-  playChip(playerId: number, columnIndex: number): void {
+  playChip(playerId: number, columnIndex: number): boolean {
     const column = this.getColumn(columnIndex);
     const lineIndexToReplace = this.getLowestEmptyLine(column);
-    if (!!lineIndexToReplace) this.board[lineIndexToReplace][columnIndex] = playerId;
-    this.display();
-    const winner = this.checkForWin();
-    if (!!winner) {
-      // eslint-disable-next-line
-      console.log(`Player ${winner} won !`);
-      process.exit();
+    let playAgain;
+    if (lineIndexToReplace !== null && lineIndexToReplace !== undefined) {
+      this.board[lineIndexToReplace][columnIndex] = playerId;
+      playAgain = false;
+    } else {
+      playAgain = true;
     }
+    return playAgain;
   }
 
   static checkForWinInArray(array: Array<number>): number {
@@ -174,13 +174,33 @@ class Game {
     return arrays;
   }
 
+  isBoardFull(): boolean {
+    for (let lineIndex = 0; lineIndex < this.height; lineIndex++) {
+      if (this.board[lineIndex].indexOf(0) >= 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   checkForWin(): number {
     const arrays = this.getAllArrays();
     for (let arrayIndex = 0; arrayIndex < arrays.length; arrayIndex++) {
       const winIndicator = Game.checkForWinInArray(arrays[arrayIndex]);
       if (winIndicator !== 0) return winIndicator;
     }
-    return 0;
+
+    return this.isBoardFull() ? -1 : 0;
+  }
+
+  get1DArrayFormatted(playerId: number): Array<number> {
+    return this.board.reduce((array, line) => array.concat(
+      line.map((cellValue) => {
+        if (cellValue === 0) return 0;
+        else if (cellValue === playerId) return 1;
+        return -1;
+      })
+    ), []);
   }
 }
 
