@@ -4,10 +4,10 @@ const synaptic = require('synaptic');
 const Helper = require('./Helper');
 
 const inputLayer = new synaptic.Layer(7 * 6);
-const hiddenLayer = new synaptic.Layer(50);
+const hiddenLayer1 = new synaptic.Layer(50);
 const outputLayer = new synaptic.Layer(7);
 
-hiddenLayer.set({
+hiddenLayer1.set({
   squash: synaptic.Neuron.squash.RELU,
   bias: 0
 });
@@ -20,16 +20,16 @@ inputLayer.set({
   bias: 0
 });
 
-inputLayer.project(hiddenLayer);
-hiddenLayer.project(outputLayer);
+inputLayer.project(hiddenLayer1);
+hiddenLayer1.project(outputLayer);
 
 const myNetwork = new synaptic.Network({
   input: inputLayer,
-  hidden: [hiddenLayer],
+  hidden: [hiddenLayer1],
   output: outputLayer,
 });
 
-const learningRate = 0.003;
+const learningRate = 0.0003;
 const gamma = 0.8;
 const learnTimes = 100000;
 
@@ -41,7 +41,7 @@ for (let i = 0; i < learnTimes; i++) {
   const boardStatesAsPlayer2 = [];
   const playsAsPlayer1 = [];
   const playsAsPlayer2 = [];
-  const epsilon = 0.2 + (0.8 / learnTimes) * i;
+  const epsilon = 0.1 + (0.5 / learnTimes) * i;
 
   let playerIdToPlay = 1;
   let pat = false;
@@ -102,16 +102,32 @@ for (let i = 0; i < learnTimes; i++) {
     const boardStates = winner === 1 ? boardStatesAsPlayer1 : boardStatesAsPlayer2;
     const plays = winner === 1 ? playsAsPlayer1 : playsAsPlayer2;
 
-    for (let playIndex = 0; playIndex < plays.length; playIndex++) {
-      myNetwork.activate(boardStates[playIndex]);
+    // backpropagate full reward for the final play
+    myNetwork.activate(boardStates[plays.length - 1]);
+    myNetwork.propagate(
+      learningRate,
+      Helper.getArrayFromIndex(plays[plays.length -1], 1)
+    );
+
+    /*
+    let output = myNetwork.activate(boardStates[plays.length -1]);
+    let PsPrime = output[plays[plays.length - 1]];
+
+    // backpropagate on the previous plays
+    for (let playIndex = plays.length - 2; playIndex >= 0; playIndex--) {
+      output = myNetwork.activate(boardStates[playIndex]);
+      let Ps = output[plays[playIndex]];
+      // console.log(Ps, PsPrime, Ps + gamma * (PsPrime - Ps))
       myNetwork.propagate(
         learningRate,
         Helper.getArrayFromIndex(
           plays[playIndex],
-          gamma ** (plays.length - playIndex - 1)
+          Ps + gamma * (PsPrime - Ps)
         )
       );
+      PsPrime = Ps;
     }
+    */
   }
   if (i % (learnTimes / 100) === 0) console.log('evaluateLearning', Helper.evaluateLearning(myNetwork));
 }
