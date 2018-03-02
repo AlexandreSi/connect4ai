@@ -99,27 +99,53 @@ for (let i = 0; i < learnTimes; i++) {
   if (winner > 0) {
     // If game ended because a player won, backpropagate
     if (i % (learnTimes / 100) === 0) game.display();
-    const boardStates = winner === 1 ? boardStatesAsPlayer1 : boardStatesAsPlayer2;
-    const plays = winner === 1 ? playsAsPlayer1 : playsAsPlayer2;
+    const winnerBoardStates = winner === 1 ? boardStatesAsPlayer1 : boardStatesAsPlayer2;
+    const winnerPlays = winner === 1 ? playsAsPlayer1 : playsAsPlayer2;
+    const loserBoardStates = winner === 1 ? boardStatesAsPlayer2 : boardStatesAsPlayer1;
+    const loserPlays = winner === 1 ? playsAsPlayer2 : playsAsPlayer1;
 
-    // backpropagate full reward for the final play
-    myNetwork.activate(boardStates[plays.length - 1]);
+    // backpropagate full reward for the final winner play
+    myNetwork.activate(winnerBoardStates[winnerPlays.length - 1]);
     myNetwork.propagate(
       learningRate,
-      Helper.getArrayFromIndex(plays[plays.length -1], 100)
+      Helper.getArrayFromIndex(winnerPlays[winnerPlays.length -1], 100)
     );
 
-    let output = myNetwork.activate(boardStates[plays.length -1]);
-    let PsPrime = output[plays[plays.length - 1]];
+    let output = myNetwork.activate(winnerBoardStates[winnerPlays.length -1]);
+    let PsPrime = output[winnerPlays[winnerPlays.length - 1]];
 
-    // backpropagate on the previous plays
-    for (let playIndex = plays.length - 2; playIndex >= 0; playIndex--) {
-      output = myNetwork.activate(boardStates[playIndex]);
-      let Ps = output[plays[playIndex]];
+    // backpropagate on the previous winnerPlays
+    for (let playIndex = winnerPlays.length - 2; playIndex >= 0; playIndex--) {
+      output = myNetwork.activate(winnerBoardStates[playIndex]);
+      let Ps = output[winnerPlays[playIndex]];
       myNetwork.propagate(
         learningRate,
         Helper.getArrayFromIndex(
-          plays[playIndex],
+          winnerPlays[playIndex],
+          Ps + gamma * (PsPrime - Ps)
+        )
+      );
+      PsPrime = Ps;
+    }
+
+    // backpropagate full reward for the final winner play
+    myNetwork.activate(loserBoardStates[loserPlays.length - 1]);
+    myNetwork.propagate(
+      learningRate,
+      Helper.getArrayFromIndex(loserPlays[loserPlays.length -1], -20)
+    );
+
+    output = myNetwork.activate(loserBoardStates[loserPlays.length -1]);
+    PsPrime = output[loserPlays[loserPlays.length - 1]];
+
+    // backpropagate on the previous loserPlays
+    for (let playIndex = loserPlays.length - 2; playIndex >= 0; playIndex--) {
+      output = myNetwork.activate(loserBoardStates[playIndex]);
+      let Ps = output[loserPlays[playIndex]];
+      myNetwork.propagate(
+        learningRate,
+        Helper.getArrayFromIndex(
+          loserPlays[playIndex],
           Ps + gamma * (PsPrime - Ps)
         )
       );
