@@ -4,16 +4,15 @@ const synaptic = require('synaptic');
 const Helper = require('./Helper');
 
 const inputLayer = new synaptic.Layer(7 * 6);
-const hiddenLayer1 = new synaptic.Layer(50);
+const hiddenLayer1 = new synaptic.Layer(60);
 const outputLayer = new synaptic.Layer(7);
 
 hiddenLayer1.set({
   squash: synaptic.Neuron.squash.RELU,
-  bias: 0
 });
 
 outputLayer.set({
-  bias: 0
+  squash: synaptic.Neuron.squash.RELU,
 });
 
 inputLayer.set({
@@ -29,8 +28,8 @@ const myNetwork = new synaptic.Network({
   output: outputLayer,
 });
 
-const learningRate = 0.0003;
-const gamma = 0.8;
+const learningRate = 0.00005;
+const gamma = 0.85;
 const learnTimes = 100000;
 
 for (let i = 0; i < learnTimes; i++) {
@@ -59,6 +58,7 @@ for (let i = 0; i < learnTimes; i++) {
     }
     const playAgain = game.playChip(playerIdToPlay, columnIndex);
 
+    // The same player may have to play again if the column he chose was full
     if (!playAgain) {
       // Save board states and plays
       if (playerIdToPlay === 1) {
@@ -106,10 +106,9 @@ for (let i = 0; i < learnTimes; i++) {
     myNetwork.activate(boardStates[plays.length - 1]);
     myNetwork.propagate(
       learningRate,
-      Helper.getArrayFromIndex(plays[plays.length -1], 1)
+      Helper.getArrayFromIndex(plays[plays.length -1], 100)
     );
 
-    /*
     let output = myNetwork.activate(boardStates[plays.length -1]);
     let PsPrime = output[plays[plays.length - 1]];
 
@@ -117,7 +116,6 @@ for (let i = 0; i < learnTimes; i++) {
     for (let playIndex = plays.length - 2; playIndex >= 0; playIndex--) {
       output = myNetwork.activate(boardStates[playIndex]);
       let Ps = output[plays[playIndex]];
-      // console.log(Ps, PsPrime, Ps + gamma * (PsPrime - Ps))
       myNetwork.propagate(
         learningRate,
         Helper.getArrayFromIndex(
@@ -127,9 +125,8 @@ for (let i = 0; i < learnTimes; i++) {
       );
       PsPrime = Ps;
     }
-    */
   }
-  if (i % (learnTimes / 100) === 0) console.log('evaluateLearning', Helper.evaluateLearning(myNetwork));
+  if (i % (learnTimes / 100) === 0) console.log('HVD 410', Helper.evaluateLearning(myNetwork));
 }
 
 console.log(myNetwork.toJSON())

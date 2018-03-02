@@ -19,7 +19,7 @@ exports.evaluateLearning = (network: any): Array<number> => {
   game1.playChip(2, 6);
   game1.playChip(1, 3);
   game1.playChip(2, 1);
-  benchMark.push(network.activate(game1.get1DArrayFormatted(1))[4]);
+  benchMark.push(network.activate(game1.get1DArrayFormatted(1)));
 
   const game2 = new connect4.Game();
   game2.playChip(2, 0);
@@ -29,22 +29,22 @@ exports.evaluateLearning = (network: any): Array<number> => {
   game2.playChip(2, 6);
   game2.playChip(1, 1);
   game2.playChip(2, 2);
-  benchMark.push(network.activate(game2.get1DArrayFormatted(1))[1]);
+  benchMark.push(network.activate(game2.get1DArrayFormatted(1)));
 
   const game3 = new connect4.Game();
   game3.playChip(1, 0);
   game3.playChip(2, 0);
   game3.playChip(1, 1);
   game3.playChip(2, 6);
-  game3.playChip(1, 1);
+  game3.playChip(1, 6);
   game3.playChip(2, 2);
   game3.playChip(1, 3);
-  game3.playChip(2, 6);
+  game3.playChip(2, 1);
   game3.playChip(1, 1);
   game3.playChip(2, 3);
   game3.playChip(1, 2);
   game3.playChip(2, 0);
-  benchMark.push(network.activate(game3.get1DArrayFormatted(1))[0]);
+  benchMark.push(network.activate(game3.get1DArrayFormatted(1)));
 
   return benchMark;
 }
