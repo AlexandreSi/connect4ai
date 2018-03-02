@@ -2,6 +2,7 @@
 const connect4 = require('./Game');
 const synaptic = require('synaptic');
 const Helper = require('./Helper');
+var fs = require('fs');
 
 const inputLayer = new synaptic.Layer(7 * 6);
 const hiddenLayer1 = new synaptic.Layer(60);
@@ -30,7 +31,7 @@ const myNetwork = new synaptic.Network({
 
 const learningRate = 0.00005;
 const gamma = 0.85;
-const learnTimes = 100000;
+const learnTimes = 100;
 
 for (let i = 0; i < learnTimes; i++) {
   if (i % (learnTimes / 100) === 0) console.log(i);
@@ -155,4 +156,10 @@ for (let i = 0; i < learnTimes; i++) {
   if (i % (learnTimes / 100) === 0) console.log('HVD 410', Helper.evaluateLearning(myNetwork));
 }
 
-console.log(myNetwork.toJSON())
+const networkWeights = myNetwork.toJSON();
+const json = JSON.stringify(networkWeights);
+
+fs.writeFile('networkWeights.json', json, 'utf8', (err) => {
+  if (err) throw err;
+  console.log('The file has been saved!');
+});
