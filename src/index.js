@@ -5,7 +5,7 @@ const Helper = require('./Helper');
 var fs = require('fs');
 
 const inputLayer = new synaptic.Layer(7 * 6);
-const hiddenLayer1 = new synaptic.Layer(60);
+const hiddenLayer1 = new synaptic.Layer(100);
 const outputLayer = new synaptic.Layer(7);
 
 hiddenLayer1.set({
@@ -13,11 +13,7 @@ hiddenLayer1.set({
 });
 
 outputLayer.set({
-  squash: synaptic.Neuron.squash.RELU,
-});
-
-inputLayer.set({
-  bias: 0
+  squash: synaptic.Neuron.squash.IDENTITY,
 });
 
 inputLayer.project(hiddenLayer1);
@@ -29,9 +25,9 @@ const myNetwork = new synaptic.Network({
   output: outputLayer,
 });
 
-const learningRate = 0.00005;
-const gamma = 0.85;
-const learnTimes = 100;
+const learningRateInit = 0.00008;
+const gamma = 0.95;
+const learnTimes = 1000000;
 
 for (let i = 0; i < learnTimes; i++) {
   if (i % (learnTimes / 100) === 0) console.log(i);
@@ -41,7 +37,8 @@ for (let i = 0; i < learnTimes; i++) {
   const boardStatesAsPlayer2 = [];
   const playsAsPlayer1 = [];
   const playsAsPlayer2 = [];
-  const epsilon = 0.1 + (0.5 / learnTimes) * i;
+  const epsilon = 0.2;
+  const learningRate = learningRateInit / (1 + 9 * i / learnTimes);
 
   let playerIdToPlay = 1;
   let pat = false;
@@ -49,9 +46,9 @@ for (let i = 0; i < learnTimes; i++) {
   while (!pat && !winner) {
     const boardArray = game.get1DArrayFormatted(playerIdToPlay);
     // Play
-    const e = Math.random();
+    const explore = !(Math.random() < epsilon);
     let columnIndex;
-    if (e < epsilon) {
+    if (!explore) {
       const output = myNetwork.activate(boardArray);
       columnIndex = output.indexOf(Math.max(...output));
     } else {
@@ -129,28 +126,19 @@ for (let i = 0; i < learnTimes; i++) {
       PsPrime = Ps;
     }
 
-    // backpropagate full reward for the final winner play
-    myNetwork.activate(loserBoardStates[loserPlays.length - 1]);
-    myNetwork.propagate(
-      learningRate,
-      Helper.getArrayFromIndex(loserPlays[loserPlays.length -1], -20)
-    );
-
-    output = myNetwork.activate(loserBoardStates[loserPlays.length -1]);
-    PsPrime = output[loserPlays[loserPlays.length - 1]];
-
-    // backpropagate on the previous loserPlays
-    for (let playIndex = loserPlays.length - 2; playIndex >= 0; playIndex--) {
-      output = myNetwork.activate(loserBoardStates[playIndex]);
-      let Ps = output[loserPlays[playIndex]];
+    // backpropagate reward for the final loser play if he could have prevented it
+    if (winnerPlays[winnerPlays.length - 1] !== loserPlays[loserPlays.length - 1]) {
+      myNetwork.activate(loserBoardStates[loserPlays.length - 1]);
       myNetwork.propagate(
         learningRate,
-        Helper.getArrayFromIndex(
-          loserPlays[playIndex],
-          Ps + gamma * (PsPrime - Ps)
-        )
+        Helper.getArrayFromIndex(winnerPlays[winnerPlays.length - 1], 100)
       );
-      PsPrime = Ps;
+    } else {
+      myNetwork.activate(loserBoardStates[loserPlays.length - 1]);
+      myNetwork.propagate(
+        learningRate,
+        Helper.getArrayFromIndex(loserPlays[loserPlays.length - 1], -20)
+      );
     }
   }
   if (i % (learnTimes / 100) === 0) console.log('HVD 410', Helper.evaluateLearning(myNetwork));
@@ -163,3 +151,6 @@ fs.writeFile('networkWeights.json', json, 'utf8', (err) => {
   if (err) throw err;
   console.log('The file has been saved!');
 });
+
+const testGame = new connect4.Game();
+console.log(myNetwork.activate(testGame.get1DArrayFormatted(1)))
