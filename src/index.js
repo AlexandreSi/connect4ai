@@ -37,8 +37,8 @@ for (let i = 0; i < learnTimes; i++) {
   const boardStatesAsPlayer2 = [];
   const playsAsPlayer1 = [];
   const playsAsPlayer2 = [];
-  const epsilon = 0.2;
-  const learningRate = learningRateInit / (1 + 9 * i / learnTimes);
+  const epsilon = 0.2 + 0.1 * i / learnTimes;
+  const learningRate = learningRateInit / (1 + 99 * i / learnTimes);
 
   let playerIdToPlay = 1;
   let pat = false;
