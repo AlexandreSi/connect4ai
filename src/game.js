@@ -202,6 +202,31 @@ class Game {
       })
     ), []);
   }
+
+  get1DArrayFiltered(playerId: number): Array<number> {
+    // this function returns the board in a single array with
+    // only the playerId chips appearing
+    return this.board.reduce((array, line) => array.concat(
+      line.map((cellValue) => {
+        if (cellValue === playerId) return 1;
+        else return 0;
+      })
+    ), []);
+  }
+
+  getConvolutionnalVol(playerId: number): any {
+    // this function aims to return a 3D array : 6*7*2 for the 2 players' chips
+    // The first unit in the depth is the playerId game
+    const opponentId = playerId === 1 ? 2 : 1;
+    const vol = {
+      sx: 6,
+      sy: 7,
+      depth: 2,
+      w: new Float64Array(this.get1DArrayFiltered(playerId).concat(this.get1DArrayFiltered(opponentId))),
+      dw: new Float64Array(6 * 7 * 2).fill(0),
+    }
+    return vol;
+  }
 }
 
 module.exports.Game = Game;

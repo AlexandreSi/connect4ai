@@ -48,3 +48,42 @@ exports.evaluateLearning = (network: any): Array<number> => {
 
   return benchMark;
 }
+
+exports.evaluateLearningCNN = (network: any): Array<number> => {
+  const benchMark = [];
+  const game1 = new connect4.Game();
+  game1.playChip(1, 1);
+  game1.playChip(2, 0);
+  game1.playChip(1, 2);
+  game1.playChip(2, 6);
+  game1.playChip(1, 3);
+  game1.playChip(2, 1);
+  benchMark.push(network.forward(game1.getConvolutionnalVol(1)).w);
+
+  const game2 = new connect4.Game();
+  game2.playChip(2, 0);
+  game2.playChip(1, 1);
+  game2.playChip(2, 0);
+  game2.playChip(1, 1);
+  game2.playChip(2, 6);
+  game2.playChip(1, 1);
+  game2.playChip(2, 2);
+  benchMark.push(network.forward(game2.getConvolutionnalVol(1)).w);
+
+  const game3 = new connect4.Game();
+  game3.playChip(1, 0);
+  game3.playChip(2, 0);
+  game3.playChip(1, 1);
+  game3.playChip(2, 6);
+  game3.playChip(1, 6);
+  game3.playChip(2, 2);
+  game3.playChip(1, 3);
+  game3.playChip(2, 1);
+  game3.playChip(1, 1);
+  game3.playChip(2, 3);
+  game3.playChip(1, 2);
+  game3.playChip(2, 0);
+  benchMark.push(network.forward(game3.getConvolutionnalVol(1)).w);
+
+  return benchMark;
+}
