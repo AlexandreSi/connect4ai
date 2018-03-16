@@ -4,14 +4,14 @@ const deepqlearn = require('convnetjs/build/deepqlearn');
 const connect4 = require('./Game');
 const Helper = require('./Helper');
 const fs = require('fs');
-const savedNetwork = require('../savedNetworkWeightsCNN_4x4_pad2_64filter_300k_SGD_HVD_OK_gamma_08_lr5e-5_eps015-030.json');
+const savedNetwork = require('../savedNetworkWeightsCNN_4x4_pad2_32filter_300k_SGD_HVD_OK_gamma_08_lr5e-5_eps015-030.json');
 
 let myNetwork;
 
 if (false) {
   const layer_defs = [];
   layer_defs.push({type:'input', out_sx:7, out_sy:6, out_depth:2});
-  layer_defs.push({type:'conv', sx:4, filters:64, stride:1, padding:2, activation:'relu'});
+  layer_defs.push({type:'conv', sx:4, filters:32, stride:1, pad:2, activation:'relu'});
   layer_defs.push({type:'fc', num_neurons:60, activation:'relu'});
   layer_defs.push({type:'regression', num_neurons:7});
   myNetwork = new convnetjs.Net();
@@ -21,22 +21,22 @@ if (false) {
   myNetwork.fromJSON(savedNetwork);
 }
 
-const learningRateInit = 0.000001;
+const learningRateInit = 0.000002;
 
 const trainer = new convnetjs.Trainer(
   myNetwork,
   {
     method: 'sgd',
     learning_rate: learningRateInit,
-    momentum: 0.7,
+    momentum: 0.9,
     l2_decay: 0.001,
     l1_decay: 0.001,
     batch_size: 1,
   }
 );
 
-const gamma = 0.7;
-const learnTimes = 50000;
+const gamma = 0.6;
+const learnTimes = 100000;
 let writeIndex = 0;
 
 for (let i = 0; i < learnTimes; i++) {
@@ -46,8 +46,8 @@ for (let i = 0; i < learnTimes; i++) {
   const boardStatesAsPlayer2 = [];
   const playsAsPlayer1 = [];
   const playsAsPlayer2 = [];
-  const epsilon = 0.6 + 0.2 * i / learnTimes;
-  const learningRate = learningRateInit / (10 + 90 * i / learnTimes);
+  const epsilon = 0.3 + 0.2 * i / learnTimes;
+  const learningRate = learningRateInit / (1 + 99 * i / learnTimes);
   trainer.learning_rate = learningRate;
 
   let playerIdToPlay = 1;
