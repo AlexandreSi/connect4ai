@@ -1,3 +1,9 @@
 node_modules/
 dest/
 networkWeights.json
+networkWeightsCNN.json
+networkWeightsCNN1.json
+networkWeightsCNN2.json
+networkWeightsCNN3.json
+networkWeightsCNN4.json
+src/display_filters.js
