@@ -27,7 +27,7 @@ const myNetwork = new synaptic.Network({
 
 const learningRateInit = 0.00008;
 const gamma = 0.95;
-const learnTimes = 1000000;
+const learnTimes = 500000;
 
 for (let i = 0; i < learnTimes; i++) {
   if (i % (learnTimes / 100) === 0) console.log(i);
@@ -123,7 +123,7 @@ for (let i = 0; i < learnTimes; i++) {
           Ps + gamma * (PsPrime - Ps)
         )
       );
-      PsPrime = Ps;
+      PsPrime = myNetwork.activate(winnerBoardStates[playIndex])[winnerPlays[playIndex]];
     }
 
     // backpropagate reward for the final loser play if he could have prevented it
@@ -131,13 +131,13 @@ for (let i = 0; i < learnTimes; i++) {
       myNetwork.activate(loserBoardStates[loserPlays.length - 1]);
       myNetwork.propagate(
         learningRate,
-        Helper.getArrayFromIndex(winnerPlays[winnerPlays.length - 1], 100)
+        Helper.getArrayFromIndex(winnerPlays[winnerPlays.length - 1], 75)
       );
     } else {
       myNetwork.activate(loserBoardStates[loserPlays.length - 1]);
       myNetwork.propagate(
         learningRate,
-        Helper.getArrayFromIndex(loserPlays[loserPlays.length - 1], -20)
+        Helper.getArrayFromIndex(loserPlays[loserPlays.length - 1], -75)
       );
     }
   }
