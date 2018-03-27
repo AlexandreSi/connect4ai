@@ -4,7 +4,7 @@ const deepqlearn = require('convnetjs/build/deepqlearn');
 const connect4 = require('./Game');
 const Helper = require('./Helper');
 const fs = require('fs');
-const savedNetwork = require('../savedNetworkWeightsCNN_4x4_pad2_32filter_300k_SGD_HVD_OK_gamma_08_lr5e-5_eps015-030.json');
+const savedNetwork = require('../savedNetworkWeightsCNNv2_4x4_pad2_32filter_100k_SGD_HVD_OK_gamma_08_lr5e-4_eps015-030+200k_lr1e-4-6_eps_03_05_gamma08+200k_lr1e-4-6_eps_015_04_gamma08+200k_lr1e-5-7_eps_015_03_gamma08.json');
 
 let myNetwork;
 
@@ -21,7 +21,7 @@ if (false) {
   myNetwork.fromJSON(savedNetwork);
 }
 
-const learningRateInit = 0.000002;
+const learningRateInit = 0.00001;
 
 const trainer = new convnetjs.Trainer(
   myNetwork,
@@ -46,7 +46,7 @@ for (let i = 0; i < learnTimes; i++) {
   const boardStatesAsPlayer2 = [];
   const playsAsPlayer1 = [];
   const playsAsPlayer2 = [];
-  const epsilon = 0.3 + 0.2 * i / learnTimes;
+  const epsilon = 0.6;
   const learningRate = learningRateInit / (1 + 99 * i / learnTimes);
   trainer.learning_rate = learningRate;
 
@@ -131,7 +131,7 @@ for (let i = 0; i < learnTimes; i++) {
           Ps + gamma * (PsPrime - Ps)
         ),
       );
-      PsPrime = Ps;
+      PsPrime = myNetwork.forward(winnerBoardStates[playIndex]).w[winnerPlays[playIndex]];
     }
 
     // backpropagate reward for the final loser play if he could have prevented it
