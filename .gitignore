@@ -6,4 +6,5 @@ networkWeightsCNN1.json
 networkWeightsCNN2.json
 networkWeightsCNN3.json
 networkWeightsCNN4.json
+savedNetwork*.json
 src/display_filters.js

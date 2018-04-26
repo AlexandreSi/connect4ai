@@ -1,136 +1,114 @@
 // @flow
 const connect4 = require('./Game');
 const Helper = require('./Helper');
-var fs = require('fs');
+const QLearning = require('./QLearning');
+const fs = require('fs');
+const Play = require('./Play')
+const NeuralNetwork = require('./NeuralNetwork');
+const savedNetwork = require('../savedNetworkWeightsCNNv3_4x4_pad2_32filter_200k_SGD_HVD_NOK_ga_05_lr1e-5-6_eps015_discount07+100k_NOK_ga04_eps015-03+100k_NOK_ga05_eps01_lr2e-5-6+100k_NOK_ga05_eps02_lr2e-5-7+200k_NOK_ga05_eps02-06_lr1e-5-7+100k_NOK_ga03_eps015_lr5e-5-7.json');
 
+const networkType = 'CNN';
 
-
-const learningRateInit = 0.00008;
-const gamma = 0.95;
-const learnTimes = 500000;
-
-for (let i = 0; i < learnTimes; i++) {
-  if (i % (learnTimes / 100) === 0) console.log(i);
-  const game = new connect4.Game();
-
-  const boardStatesAsPlayer1 = [];
-  const boardStatesAsPlayer2 = [];
-  const playsAsPlayer1 = [];
-  const playsAsPlayer2 = [];
-  const epsilon = 0.2 + 0.1 * i / learnTimes;
-  const learningRate = learningRateInit / (1 + 99 * i / learnTimes);
-
-  let playerIdToPlay = 1;
-  let pat = false;
-  let winner = 0;
-  while (!pat && !winner) {
-    const boardArray = game.get1DArrayFormatted(playerIdToPlay);
-    // Play
-    const explore = !(Math.random() < epsilon);
-    let columnIndex;
-    if (!explore) {
-      const output = myNetwork.activate(boardArray);
-      columnIndex = output.indexOf(Math.max(...output));
-    } else {
-      columnIndex = Helper.randomChoice([0, 1, 2, 3, 4, 5, 6]);
-    }
-    const playAgain = game.playChip(playerIdToPlay, columnIndex);
-
-    // The same player may have to play again if the column he chose was full
-    if (!playAgain) {
-      // Save board states and plays
-      if (playerIdToPlay === 1) {
-        boardStatesAsPlayer1.push(boardArray);
-        playsAsPlayer1.push(columnIndex);
-      } else if (playerIdToPlay === 2) {
-        boardStatesAsPlayer2.push(boardArray);
-        playsAsPlayer2.push(columnIndex);
-      }
-
-      // Check for wins
-      const gameState = game.checkForWin();
-      switch (gameState) {
-        case 0:
-          // Nobody won, switch player
-          playerIdToPlay = playerIdToPlay === 1 ? 2 : 1;
-          break;
-        case -1:
-          // Pat
-          pat = true;
-          break;
-        case 1:
-          // Player 1 won
-          winner = 1;
-          break;
-        case 2:
-          // Player 2 won
-          winner = 2;
-          break;
-        default:
-          break;
-      }
-    } else {
-      // Maybe backpropagate the fact that it played bad
-      // For the moment, just ignore
-    }
+const networkConfig = {
+  CNN: {
+    filters_number: 32,
+    padding: 2,
+    stride: 1,
+    size: 4,
+    layers : [60, 30]
+  },
+  NN: {
+    layers: [100]
   }
-  if (winner > 0) {
-    // If game ended because a player won, backpropagate
-    if (i % (learnTimes / 100) === 0) game.display();
-    const winnerBoardStates = winner === 1 ? boardStatesAsPlayer1 : boardStatesAsPlayer2;
-    const winnerPlays = winner === 1 ? playsAsPlayer1 : playsAsPlayer2;
-    const loserBoardStates = winner === 1 ? boardStatesAsPlayer2 : boardStatesAsPlayer1;
-    const loserPlays = winner === 1 ? playsAsPlayer2 : playsAsPlayer1;
-
-    // backpropagate full reward for the final winner play
-    myNetwork.activate(winnerBoardStates[winnerPlays.length - 1]);
-    myNetwork.propagate(
-      learningRate,
-      Helper.getArrayFromIndex(winnerPlays[winnerPlays.length -1], 100)
-    );
-
-    let output = myNetwork.activate(winnerBoardStates[winnerPlays.length -1]);
-    let PsPrime = output[winnerPlays[winnerPlays.length - 1]];
-
-    // backpropagate on the previous winnerPlays
-    for (let playIndex = winnerPlays.length - 2; playIndex >= 0; playIndex--) {
-      output = myNetwork.activate(winnerBoardStates[playIndex]);
-      let Ps = output[winnerPlays[playIndex]];
-      myNetwork.propagate(
-        learningRate,
-        Helper.getArrayFromIndex(
-          winnerPlays[playIndex],
-          Ps + gamma * (PsPrime - Ps)
-        )
-      );
-      PsPrime = myNetwork.activate(winnerBoardStates[playIndex])[winnerPlays[playIndex]];
-    }
-
-    // backpropagate reward for the final loser play if he could have prevented it
-    if (winnerPlays[winnerPlays.length - 1] !== loserPlays[loserPlays.length - 1]) {
-      myNetwork.activate(loserBoardStates[loserPlays.length - 1]);
-      myNetwork.propagate(
-        learningRate,
-        Helper.getArrayFromIndex(winnerPlays[winnerPlays.length - 1], 75)
-      );
-    } else {
-      myNetwork.activate(loserBoardStates[loserPlays.length - 1]);
-      myNetwork.propagate(
-        learningRate,
-        Helper.getArrayFromIndex(loserPlays[loserPlays.length - 1], -75)
-      );
-    }
-  }
-  if (i % (learnTimes / 100) === 0) console.log('HVD 410', Helper.evaluateLearning(myNetwork));
 }
 
-const networkWeights = myNetwork.toJSON();
+const myNetwork = NeuralNetwork.initialize(networkType, networkConfig);
+const myTrainer = NeuralNetwork.getTrainer(networkType, myNetwork);
+
+const learningRateInit = 0.0001;
+const learningRateFinalFraction = 10;
+const discount = 0.8;
+const gamma = 0.3;
+const learnTimes = 10000;
+const reward = 100;
+const sideReward = 75;
+
+for (let i = 0; i < learnTimes; i++) {
+  // display info once every 1/100
+  if (i % (learnTimes / 100) === 0) console.log(i);
+  const display = (i % (learnTimes / 100) === 0) ? true : false;
+
+  // change ratio between exploration and exploitation
+  const epsilon = 0.2;
+
+  // play a game of connect4
+  const gameInfo = Play.playGame(networkType, epsilon, myNetwork, display);
+
+  // get game info back
+  const winnerBoardStates = gameInfo.winnerBoardStates;
+  const winnerPlays = gameInfo.winnerPlays;
+  const loserBoardStates = gameInfo.loserBoardStates;
+  const loserPlays = gameInfo.loserPlays;
+  const winnerPlaysLength = winnerPlays.length;
+  const loserPlaysLength = loserPlays.length;
+
+  // adapt learning rate
+  const learningRate = learningRateInit / (1 + (learningRateFinalFraction - 1) * i / learnTimes);
+
+  if (winnerBoardStates.length !== 0) {
+    // backpropagate full reward for the final winner play
+    NeuralNetwork.backPropagate(
+      networkType,
+      myTrainer,
+      winnerBoardStates[winnerPlaysLength - 1],
+      reward,
+      winnerPlays[winnerPlaysLength - 1],
+      learningRate
+    )
+
+    QLearning.trainOnPreviousPlays(
+      networkType,
+      myNetwork,
+      myTrainer,
+      winnerBoardStates,
+      winnerPlays,
+      learningRate,
+      reward,
+      discount,
+      gamma,
+    );
+    
+    if (winnerPlays[winnerPlaysLength - 1] !== loserPlays[loserPlaysLength - 1]) {
+      // backpropagate reward for the final loser play if he could have prevented it
+      NeuralNetwork.backPropagate(
+        networkType,
+        myTrainer,
+        loserBoardStates[loserPlaysLength - 1],
+        sideReward,
+        winnerPlays[winnerPlaysLength - 1],
+        learningRate
+      )
+    } else {
+      // backpropagate punishment for the final loser play if he permitted it
+      NeuralNetwork.backPropagate(
+        networkType,
+        myTrainer,
+        loserBoardStates[loserPlaysLength - 1],
+        - sideReward,
+        loserPlays[loserPlaysLength - 1],
+        learningRate
+      )
+    }
+  }
+  if (i % (learnTimes / 100) === 0) {
+    console.log('HVD 410', NeuralNetwork.evaluate(networkType, myNetwork));
+  }
+}
+
+const networkWeights = myNetwork && myNetwork.toJSON();
 const json = JSON.stringify(networkWeights);
 
-fs.writeFile('networkWeights.json', json, 'utf8', (err) => {
+fs.writeFile(`networkWeights${networkType}.json`, json, 'utf8', (err) => {
   if (err) throw err;
   console.log('The file has been saved!');
 });
-
-const testGame = new connect4.Game();
-console.log(myNetwork.activate(testGame.get1DArrayFormatted(1)))
