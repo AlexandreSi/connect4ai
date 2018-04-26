@@ -214,7 +214,7 @@ class Game {
     ), []);
   }
 
-  getConvolutionnalVol(playerId: number): any {
+  getConvolutionalVol(playerId: number): any {
     // this function aims to return a 3D array : 6*7*2 for the 2 players' chips
     // The first unit in the depth is the playerId game
     const opponentId = playerId === 1 ? 2 : 1;

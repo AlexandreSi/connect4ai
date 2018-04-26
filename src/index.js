@@ -1,29 +1,9 @@
 // @flow
 const connect4 = require('./Game');
-const synaptic = require('synaptic');
 const Helper = require('./Helper');
 var fs = require('fs');
 
-const inputLayer = new synaptic.Layer(7 * 6);
-const hiddenLayer1 = new synaptic.Layer(100);
-const outputLayer = new synaptic.Layer(7);
 
-hiddenLayer1.set({
-  squash: synaptic.Neuron.squash.RELU,
-});
-
-outputLayer.set({
-  squash: synaptic.Neuron.squash.IDENTITY,
-});
-
-inputLayer.project(hiddenLayer1);
-hiddenLayer1.project(outputLayer);
-
-const myNetwork = new synaptic.Network({
-  input: inputLayer,
-  hidden: [hiddenLayer1],
-  output: outputLayer,
-});
 
 const learningRateInit = 0.00008;
 const gamma = 0.95;
