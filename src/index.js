@@ -1,15 +1,32 @@
 // @flow
-const connect4 = require('./Game');
-const Helper = require('./Helper');
 const QLearning = require('./QLearning');
-const fs = require('fs');
 const Play = require('./Play')
 const NeuralNetwork = require('./NeuralNetwork');
-const savedNetwork = require('../savedNetworkWeightsCNNv3_4x4_pad2_32filter_200k_SGD_HVD_NOK_ga_05_lr1e-5-6_eps015_discount07+100k_NOK_ga04_eps015-03+100k_NOK_ga05_eps01_lr2e-5-6+100k_NOK_ga05_eps02_lr2e-5-7+200k_NOK_ga05_eps02-06_lr1e-5-7+100k_NOK_ga03_eps015_lr5e-5-7.json');
+const fs = require('fs');
 
-const networkType = 'CNN';
-
-const networkConfig = {
+// -------------- PARAMETERS ---------------- //
+// type of neural network to train
+const NETWORK_TYPE = 'CNN';
+// number of games to play
+const LEARN_TIMES = 10000;
+// learningRate is progressively decreased with the number of games until
+// the final value LR_INIT/LR_FINAL_FRACTION
+const LR_INIT = 0.0001;
+const LR_FINAL_FRACTION = 10;
+// epsilon is the ratio between exploration and exploitation
+// it can evolve along the games played
+const EPSILON_INIT = 0.1;
+const EPSILON_FINAL = 0.4;
+// gamma is the fraction attributed to the maximum Q Value of the next state
+const GAMMA = 0.3;
+// reward awarded to the final play that led to victory
+const REWARD = 100;
+// discount applied to the reward awarded to the previous plays that led to victory
+const DISCOUNT = 0.8;
+// reward (or - reward) awarded to prevent the bot to lose
+const SIDE_REWARD = 75;
+// network configuration
+const NETWORK_CONFIG = {
   CNN: {
     filters_number: 32,
     padding: 2,
@@ -21,28 +38,21 @@ const networkConfig = {
     layers: [100]
   }
 }
+// ------------------------------------------ //
 
-const myNetwork = NeuralNetwork.initialize(networkType, networkConfig);
-const myTrainer = NeuralNetwork.getTrainer(networkType, myNetwork);
+const myNetwork = NeuralNetwork.initialize(NETWORK_TYPE, NETWORK_CONFIG);
+const myTrainer = NeuralNetwork.getTrainer(NETWORK_TYPE, myNetwork);
 
-const learningRateInit = 0.0001;
-const learningRateFinalFraction = 10;
-const discount = 0.8;
-const gamma = 0.3;
-const learnTimes = 10000;
-const reward = 100;
-const sideReward = 75;
-
-for (let i = 0; i < learnTimes; i++) {
+for (let i = 0; i < LEARN_TIMES; i++) {
   // display info once every 1/100
-  if (i % (learnTimes / 100) === 0) console.log(i);
-  const display = (i % (learnTimes / 100) === 0) ? true : false;
+  if (i % (LEARN_TIMES / 100) === 0) console.log(i);
+  const display = (i % (LEARN_TIMES / 100) === 0) ? true : false;
 
   // change ratio between exploration and exploitation
-  const epsilon = 0.2;
+  const epsilon = EPSILON_INIT + (EPSILON_FINAL - EPSILON_INIT) * i / LEARN_TIMES;
 
   // play a game of connect4
-  const gameInfo = Play.playGame(networkType, epsilon, myNetwork, display);
+  const gameInfo = Play.playGame(NETWORK_TYPE, epsilon, myNetwork, display);
 
   // get game info back
   const winnerBoardStates = gameInfo.winnerBoardStates;
@@ -53,62 +63,64 @@ for (let i = 0; i < learnTimes; i++) {
   const loserPlaysLength = loserPlays.length;
 
   // adapt learning rate
-  const learningRate = learningRateInit / (1 + (learningRateFinalFraction - 1) * i / learnTimes);
+  const learningRate = LR_INIT / (1 + (LR_FINAL_FRACTION - 1) * i / LEARN_TIMES);
 
   if (winnerBoardStates.length !== 0) {
     // backpropagate full reward for the final winner play
     NeuralNetwork.backPropagate(
-      networkType,
+      NETWORK_TYPE,
       myTrainer,
       winnerBoardStates[winnerPlaysLength - 1],
-      reward,
+      REWARD,
       winnerPlays[winnerPlaysLength - 1],
       learningRate
     )
 
+    // train on all the plays that led to victory
     QLearning.trainOnPreviousPlays(
-      networkType,
+      NETWORK_TYPE,
       myNetwork,
       myTrainer,
       winnerBoardStates,
       winnerPlays,
       learningRate,
-      reward,
-      discount,
-      gamma,
+      REWARD,
+      DISCOUNT,
+      GAMMA,
     );
     
     if (winnerPlays[winnerPlaysLength - 1] !== loserPlays[loserPlaysLength - 1]) {
       // backpropagate reward for the final loser play if he could have prevented it
       NeuralNetwork.backPropagate(
-        networkType,
+        NETWORK_TYPE,
         myTrainer,
         loserBoardStates[loserPlaysLength - 1],
-        sideReward,
+        SIDE_REWARD,
         winnerPlays[winnerPlaysLength - 1],
         learningRate
       )
     } else {
       // backpropagate punishment for the final loser play if he permitted it
       NeuralNetwork.backPropagate(
-        networkType,
+        NETWORK_TYPE,
         myTrainer,
         loserBoardStates[loserPlaysLength - 1],
-        - sideReward,
+        - SIDE_REWARD,
         loserPlays[loserPlaysLength - 1],
         learningRate
       )
     }
   }
-  if (i % (learnTimes / 100) === 0) {
-    console.log('HVD 410', NeuralNetwork.evaluate(networkType, myNetwork));
+  if (i % (LEARN_TIMES / 100) === 0) {
+    console.log('HVD 410', NeuralNetwork.evaluate(NETWORK_TYPE, myNetwork));
   }
 }
 
+// write final weights
 const networkWeights = myNetwork && myNetwork.toJSON();
 const json = JSON.stringify(networkWeights);
 
-fs.writeFile(`networkWeights${networkType}.json`, json, 'utf8', (err) => {
+fs.writeFile(`networkWeights${NETWORK_TYPE}.json`, json, 'utf8', (err) => {
   if (err) throw err;
   console.log('The file has been saved!');
 });
